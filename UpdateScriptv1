@@ -1,0 +1,88 @@
+local Players, RunService, CoreGui = game:GetService("Players"), game:GetService("RunService"), game:GetService("CoreGui")
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+if CoreGui:FindFirstChild("DeltaMenuVip_V2") then CoreGui.DeltaMenuVip_V2:Destroy() end
+
+getgenv().Aimbot = false; getgenv().ESPBox = false; getgenv().ESPDot = false; getgenv().ESPLine = false
+getgenv().Velocidade = false; getgenv().Pulo = false
+
+-- [UI Setup, Páginas e Botões idênticos aos anteriores...]
+local ScreenGui = Instance.new("ScreenGui", CoreGui); ScreenGui.Name = "DeltaMenuVip_V2"
+local OpenBtn = Instance.new("TextButton", ScreenGui); OpenBtn.Size = UDim2.new(0, 100, 0, 50); OpenBtn.Position = UDim2.new(0, 20, 0.5, -25); OpenBtn.Text = "MENU"; OpenBtn.TextColor3 = Color3.new(1,1,1); OpenBtn.BackgroundColor3 = Color3.fromRGB(30,30,30); OpenBtn.Font = Enum.Font.Code; OpenBtn.TextSize = 20
+Instance.new("UICorner", OpenBtn); Instance.new("UIStroke", OpenBtn).Color = Color3.fromRGB(0, 150, 255)
+
+local Main = Instance.new("Frame", ScreenGui); Main.Size = UDim2.new(0, 400, 0, 300); Main.Position = UDim2.new(0.5, -200, 0.5, -150); Main.BackgroundColor3 = Color3.fromRGB(20, 20, 20); Main.Visible = false; Instance.new("UICorner", Main)
+Instance.new("UIStroke", Main).Color = Color3.fromRGB(0, 150, 255); OpenBtn.MouseButton1Click:Connect(function() Main.Visible = not Main.Visible end)
+
+local Sidebar = Instance.new("Frame", Main); Sidebar.Size = UDim2.new(0.3, 0, 1, 0); Sidebar.BackgroundColor3 = Color3.fromRGB(25, 25, 25); Instance.new("UICorner", Sidebar)
+local Content = Instance.new("Frame", Main); Content.Size = UDim2.new(0.7, 0, 1, 0); Content.Position = UDim2.new(0.3, 0, 0, 0); Content.BackgroundTransparency = 1
+Instance.new("UIListLayout", Sidebar).Padding = UDim.new(0, 15); Instance.new("UIPadding", Sidebar).PaddingTop = UDim.new(0, 20)
+
+local function criarPagina()
+    local scroll = Instance.new("ScrollingFrame", Content); scroll.Size = UDim2.new(1, 0, 1, 0); scroll.BackgroundTransparency = 1; scroll.CanvasSize = UDim2.new(0, 0, 1.5, 0); scroll.ScrollBarThickness = 0; scroll.Visible = false
+    Instance.new("UIListLayout", scroll).Padding = UDim.new(0, 15); Instance.new("UIPadding", scroll).PaddingTop = UDim.new(0, 15); Instance.new("UIPadding", scroll).PaddingLeft = UDim.new(0, 15)
+    return scroll
+end
+
+local MenuPage, VisualPage, PlayerPage, MiscPage = criarPagina(), criarPagina(), criarPagina(), criarPagina()
+MenuPage.Visible = true
+
+local function criarAba(nome, target)
+    local b = Instance.new("TextButton", Sidebar); b.Size = UDim2.new(0.85, 0, 0, 40); b.Text = nome; b.BackgroundColor3 = Color3.fromRGB(40, 40, 40); b.TextColor3 = Color3.new(1,1,1); b.Font = Enum.Font.Code; b.TextSize = 18; b.BorderSizePixel = 0; Instance.new("UICorner", b)
+    b.MouseButton1Click:Connect(function() for _, p in pairs(Content:GetChildren()) do if p:IsA("ScrollingFrame") then p.Visible = false end end; target.Visible = true end)
+end
+criarAba("MENU", MenuPage); criarAba("VISUAL", VisualPage); criarAba("PLAYER", PlayerPage); criarAba("MISC", MiscPage)
+
+local function btn(parent, nome, cfg)
+    local b = Instance.new("TextButton", parent); b.Size = UDim2.new(0.9, 0, 0, 45); b.Text = nome; b.BackgroundColor3 = Color3.fromRGB(50,50,50); b.TextColor3 = Color3.new(1,1,1); b.Font = Enum.Font.Code; b.TextSize = 18; Instance.new("UICorner", b)
+    b.MouseButton1Click:Connect(function() getgenv()[cfg] = not getgenv()[cfg]; b.BackgroundColor3 = getgenv()[cfg] and Color3.fromRGB(0, 150, 255) or Color3.fromRGB(50,50,50) end)
+end
+btn(MenuPage, "Aimbot", "Aimbot"); btn(VisualPage, "ESP Box", "ESPBox"); btn(VisualPage, "ESP Ponto", "ESPDot"); btn(VisualPage, "ESP Linha", "ESPLine"); btn(PlayerPage, "Velocidade", "Velocidade"); btn(PlayerPage, "Pulo Alto", "Pulo")
+
+-- Lógica Unificada (Aimbot + ESP + Movimento)
+local espLines = {}
+
+RunService.RenderStepped:Connect(function()
+    local char = LocalPlayer.Character
+    if char and char:FindFirstChild("Humanoid") then
+        if getgenv().Velocidade then char.HumanoidRootPart.CFrame += (char.Humanoid.MoveDirection * 0.3) end -- Nível 3
+        char.Humanoid.JumpPower = getgenv().Pulo and 100 or 50
+    end
+
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character.Humanoid.Health > 0 then
+            local c = p.Character
+            
+            -- ESPs
+            if getgenv().ESPBox then if not c:FindFirstChild("BoxESP") then local hl = Instance.new("Highlight", c); hl.Name = "BoxESP"; hl.FillColor = Color3.fromRGB(0, 150, 255) end elseif c:FindFirstChild("BoxESP") then c.BoxESP:Destroy() end
+            if getgenv().ESPDot then if not c.Head:FindFirstChild("DotESP") then local bb = Instance.new("BillboardGui", c.Head); bb.Name = "DotESP"; bb.Size = UDim2.new(0, 10, 0, 10); bb.AlwaysOnTop = true; local f = Instance.new("Frame", bb); f.Size = UDim2.new(1,0,1,0); f.BackgroundColor3 = Color3.fromRGB(0,150,255) end elseif c.Head:FindFirstChild("DotESP") then c.Head:FindFirstChild("DotESP"):Destroy() end
+            if getgenv().ESPLine then
+                if not espLines[p.Name] then espLines[p.Name] = Drawing.new("Line") end
+                local pos, vis = Camera:WorldToViewportPoint(c.HumanoidRootPart.Position)
+                espLines[p.Name].Visible = vis
+                if vis then espLines[p.Name].From = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y); espLines[p.Name].To = Vector2.new(pos.X, pos.Y); espLines[p.Name].Color = Color3.fromRGB(0, 150, 255) end
+            elseif espLines[p.Name] then espLines[p.Name]:Remove(); espLines[p.Name] = nil end
+        else
+            if espLines[p.Name] then espLines[p.Name]:Remove(); espLines[p.Name] = nil end
+        end
+    end
+
+    -- Aimbot com Raycast Anti-Wall
+    if getgenv().Aimbot then
+        local alvo = nil; local distMin = 500
+        for _, p in pairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("Head") and p.Character.Humanoid.Health > 0 then
+                local headPos = p.Character.Head.Position
+                local pos, vis = Camera:WorldToViewportPoint(headPos)
+                local ray = Ray.new(Camera.CFrame.Position, (headPos - Camera.CFrame.Position).Unit * 500)
+                local hit = workspace:FindPartOnRay(ray, LocalPlayer.Character)
+                if vis and hit and hit:IsDescendantOf(p.Character) then
+                    local d = (Vector2.new(pos.X, pos.Y) - Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)).Magnitude
+                    if d < distMin then alvo = p.Character.Head; distMin = d end
+                end
+            end
+        end
+        if alvo then Camera.CFrame = CFrame.lookAt(Camera.CFrame.Position, alvo.Position) end
+    end
+end)
